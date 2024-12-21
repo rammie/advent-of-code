@@ -85,8 +85,7 @@ def get_shortest_paths(grid, start, end, visited=None):
     return all_paths
 
 
-@cache
-def get_shortest_moves(grid, target, curr=A):
+def get_shortest_sequences(grid, target, curr=A):
     if len(target) == 0:
         return [[]]
 
@@ -95,7 +94,7 @@ def get_shortest_moves(grid, target, curr=A):
     shortest_path_length = float("inf")
     candidates = [
         p + path_r
-        for path_r in get_shortest_moves(grid, target[1:], next_key)
+        for path_r in get_shortest_sequences(grid, target[1:], next_key)
         for p in get_shortest_paths(grid, curr, next_key)
     ]
     for c in candidates:
@@ -108,54 +107,46 @@ def get_shortest_moves(grid, target, curr=A):
 
 
 @cache
-def get_nth_dirpad_least_moves(path, iters=2, curr=A):
-    if not path:
+def calc_shortest_dirpad_sequence_length(sequence, num_dirpads=2, curr=A):
+    if not sequence:
         return 0
 
-    sequence = "".join(path)
     parts = sequence.split(A)
     if len(parts) > 2:
-        least_moves = 0
-        for part in parts[:-1]:
-            part_arr = list(part)
-            part_arr.append(A)
-            least_moves += get_nth_dirpad_least_moves(tuple(part_arr), iters)
-        return least_moves
+        return sum(
+            calc_shortest_dirpad_sequence_length(part + A, num_dirpads)
+            for part in parts[:-1]
+        )
 
-    if iters == 1:
-        least_moves = float("inf")
-        next_key = sequence[0]
-        rest_least_moves = get_nth_dirpad_least_moves(sequence[1:], iters, next_key)
-        for p in get_shortest_paths(dirpad, curr, next_key):
-            candidate = len(p) + rest_least_moves
-            least_moves = min(least_moves, candidate)
-        return least_moves
+    if num_dirpads == 1:
+        car, cdr = sequence[0], sequence[1:]
+        rest = calc_shortest_dirpad_sequence_length(cdr, num_dirpads, car)
+        return rest + min(len(p) for p in get_shortest_paths(dirpad, curr, car))
 
+    return min(
+        calc_shortest_dirpad_sequence_length("".join(dp), num_dirpads - 1)
+        for dp in get_shortest_sequences(dirpad, sequence)
+    )
+
+
+def calc_shortest_sequence_length(target, num_dirpads=2):
     least_moves = float("inf")
-    dirpad_paths = get_shortest_moves(dirpad, tuple(path))
-    for dp in dirpad_paths:
-        new_least_moves = get_nth_dirpad_least_moves(tuple(dp), iters - 1)
-        least_moves = min(least_moves, new_least_moves)
-    return least_moves
-
-
-def calc_shortest_sequence_length(target, iters=2):
-    least_moves = float("inf")
-    for kp in get_shortest_moves(keypad, target):
-        candidate = get_nth_dirpad_least_moves(tuple(kp), iters=iters)
+    for kp in get_shortest_sequences(keypad, target):
+        candidate = calc_shortest_dirpad_sequence_length(
+            "".join(kp), num_dirpads=num_dirpads
+        )
         least_moves = min(least_moves, candidate)
     return least_moves
 
 
-def calc_complexity(target, iters=2):
+def calc_complexity(target, num_dirpads=2):
     print("calculating complexity for", target)
     num = int(target[:-1])
-    path_len = calc_shortest_sequence_length(target, iters=iters)
+    path_len = calc_shortest_sequence_length(target, num_dirpads=num_dirpads)
     print(f"complexity {path_len} * {num}")
     return num * path_len
 
 
 inputs = open("input21.txt").read().strip().split("\n")
-
-print(sum(calc_complexity(t, iters=2) for t in inputs))
-print(sum(calc_complexity(t, iters=25) for t in inputs))
+print(sum(calc_complexity(t, num_dirpads=2) for t in inputs))
+print(sum(calc_complexity(t, num_dirpads=25) for t in inputs))

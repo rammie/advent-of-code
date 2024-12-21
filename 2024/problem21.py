@@ -7,17 +7,17 @@ DOWN = D = "v"
 A = "A"
 N = None
 
-keypad = [
-    ["7", "8", "9"],
-    ["4", "5", "6"],
-    ["1", "2", "3"],
-    [N, "0", A],
-]
+keypad = (
+    ("7", "8", "9"),
+    ("4", "5", "6"),
+    ("1", "2", "3"),
+    (N, "0", A),
+)
 
-dirpad = [
-    [N, U, A],
-    [L, D, R],
-]
+dirpad = (
+    (N, U, A),
+    (L, D, R),
+)
 
 
 def iter_grid(grid):
@@ -34,10 +34,6 @@ def get(grid, x, y):
     if x < 0 or x >= grid_width or y < 0 or y >= grid_height:
         return None
     return grid[y][x]
-
-
-def copy_grid(grid):
-    return [row.copy() for row in grid]
 
 
 def print_grid(grid):
@@ -61,47 +57,23 @@ def get_moves(x, y):
     ]
 
 
-@cache
-def get_keypad_paths(start, end, visited=None):
-    visited = set(visited) if visited else set()
-    if start == end:
-        return [[A]]
-
-    all_paths = []
-
-    sx, sy = find(keypad, start)
-    visited.add((sx, sy))
-    for direction, mx, my in get_moves(sx, sy):
-        mkey = get(keypad, mx, my)
-        if mkey is None:
-            continue
-        if (mx, my) in visited:
-            continue
-        paths = get_keypad_paths(mkey, end, tuple(visited))
-        all_paths += [[direction] + p for p in paths]
-
-    all_paths.sort(key=len)
-    return all_paths
-
-
-@cache
-def get_shortest_dirpad_paths(start, end, visited=None):
+def get_shortest_paths(grid, start, end, visited=None):
     visited = set(visited) if visited else set()
     if start == end:
         return [[A]]
 
     all_paths = []
     shortest_path_length = float("inf")
-    sx, sy = find(dirpad, start)
+    sx, sy = find(grid, start)
     visited.add((sx, sy))
     for direction, mx, my in get_moves(sx, sy):
-        mkey = get(dirpad, mx, my)
+        mkey = get(grid, mx, my)
         if mkey is None:
             continue
         if (mx, my) in visited:
             continue
 
-        paths = get_shortest_dirpad_paths(mkey, end, tuple(visited))
+        paths = get_shortest_paths(grid, mkey, end, tuple(visited))
         for p in paths:
             candidate = [direction] + p
             if len(candidate) < shortest_path_length:
@@ -114,7 +86,7 @@ def get_shortest_dirpad_paths(start, end, visited=None):
 
 
 @cache
-def get_shortest_keypad_moves(target, curr=A):
+def get_shortest_moves(grid, target, curr=A):
     if len(target) == 0:
         return [[]]
 
@@ -123,28 +95,8 @@ def get_shortest_keypad_moves(target, curr=A):
     shortest_path_length = float("inf")
     candidates = [
         p + path_r
-        for path_r in get_shortest_keypad_moves(target[1:], next_key)
-        for p in get_keypad_paths(curr, next_key)
-    ]
-    for c in candidates:
-        if len(c) < shortest_path_length:
-            shortest_path_length = len(c)
-            best_paths = [c]
-        elif len(c) == shortest_path_length:
-            best_paths.append(c)
-    return best_paths
-
-
-def get_shortest_dirpad_moves(sequence, curr=A):
-    if len(sequence) == 0:
-        return [[]]
-    next_key = sequence[0]
-    best_paths = []
-    shortest_path_length = float("inf")
-    candidates = [
-        p + path_r
-        for path_r in get_shortest_dirpad_moves(sequence[1:], next_key)
-        for p in get_shortest_dirpad_paths(curr, next_key)
+        for path_r in get_shortest_moves(grid, target[1:], next_key)
+        for p in get_shortest_paths(grid, curr, next_key)
     ]
     for c in candidates:
         if len(c) < shortest_path_length:
@@ -156,22 +108,7 @@ def get_shortest_dirpad_moves(sequence, curr=A):
 
 
 @cache
-def get_nth_dirpad_least_moves_helper(sequence, curr=A):
-    # print("dirpad moves cache miss", curr, sequence)
-    if len(sequence) == 0:
-        return 0
-
-    least_moves = float("inf")
-    next_key = sequence[0]
-    rest_least_moves = get_nth_dirpad_least_moves_helper(sequence[1:], next_key)
-    for p in get_shortest_dirpad_paths(curr, next_key):
-        candidate = len(p) + rest_least_moves
-        least_moves = min(least_moves, candidate)
-    return least_moves
-
-
-@cache
-def get_nth_dirpad_least_moves(path, iters=2):
+def get_nth_dirpad_least_moves(path, iters=2, curr=A):
     if not path:
         return 0
 
@@ -186,19 +123,25 @@ def get_nth_dirpad_least_moves(path, iters=2):
         return least_moves
 
     if iters == 1:
-        return get_nth_dirpad_least_moves_helper(tuple(path))
+        least_moves = float("inf")
+        next_key = sequence[0]
+        rest_least_moves = get_nth_dirpad_least_moves(sequence[1:], iters, next_key)
+        for p in get_shortest_paths(dirpad, curr, next_key):
+            candidate = len(p) + rest_least_moves
+            least_moves = min(least_moves, candidate)
+        return least_moves
 
     least_moves = float("inf")
-    dirpad_paths = get_shortest_dirpad_moves(tuple(path))
+    dirpad_paths = get_shortest_moves(dirpad, tuple(path))
     for dp in dirpad_paths:
         new_least_moves = get_nth_dirpad_least_moves(tuple(dp), iters - 1)
         least_moves = min(least_moves, new_least_moves)
     return least_moves
 
 
-def get_shortest_sequence(target, iters=2):
+def calc_shortest_sequence_length(target, iters=2):
     least_moves = float("inf")
-    for kp in get_shortest_keypad_moves(target):
+    for kp in get_shortest_moves(keypad, target):
         candidate = get_nth_dirpad_least_moves(tuple(kp), iters=iters)
         least_moves = min(least_moves, candidate)
     return least_moves
@@ -207,7 +150,7 @@ def get_shortest_sequence(target, iters=2):
 def calc_complexity(target, iters=2):
     print("calculating complexity for", target)
     num = int(target[:-1])
-    path_len = get_shortest_sequence(target, iters=iters)
+    path_len = calc_shortest_sequence_length(target, iters=iters)
     print(f"complexity {path_len} * {num}")
     return num * path_len
 

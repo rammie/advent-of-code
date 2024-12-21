@@ -60,10 +60,10 @@ def get_moves(x, y):
 def get_shortest_paths(grid, start, end, visited=None):
     visited = set(visited) if visited else set()
     if start == end:
-        return [[A]]
+        return [A]
 
-    all_paths = []
     shortest_path_length = float("inf")
+    best_paths = []
     sx, sy = find(grid, start)
     visited.add((sx, sy))
     for direction, mx, my in get_moves(sx, sy):
@@ -75,23 +75,23 @@ def get_shortest_paths(grid, start, end, visited=None):
 
         paths = get_shortest_paths(grid, mkey, end, tuple(visited))
         for p in paths:
-            candidate = [direction] + p
+            candidate = direction + p
             if len(candidate) < shortest_path_length:
                 shortest_path_length = len(candidate)
-                all_paths = [candidate]
+                best_paths = [candidate]
             elif len(candidate) == shortest_path_length:
-                all_paths.append(candidate)
+                best_paths.append(candidate)
 
-    return all_paths
+    return best_paths
 
 
 def get_shortest_sequences(grid, target, curr=A):
     if len(target) == 0:
-        return [[]]
+        return [""]
 
     next_key = target[0]
-    best_paths = []
     shortest_path_length = float("inf")
+    best_paths = []
     candidates = [
         p + path_r
         for path_r in get_shortest_sequences(grid, target[1:], next_key)
@@ -124,19 +124,16 @@ def calc_shortest_dirpad_sequence_length(sequence, num_dirpads=2, curr=A):
         return rest + min(len(p) for p in get_shortest_paths(dirpad, curr, car))
 
     return min(
-        calc_shortest_dirpad_sequence_length("".join(dp), num_dirpads - 1)
+        calc_shortest_dirpad_sequence_length(dp, num_dirpads - 1)
         for dp in get_shortest_sequences(dirpad, sequence)
     )
 
 
 def calc_shortest_sequence_length(target, num_dirpads=2):
-    least_moves = float("inf")
-    for kp in get_shortest_sequences(keypad, target):
-        candidate = calc_shortest_dirpad_sequence_length(
-            "".join(kp), num_dirpads=num_dirpads
-        )
-        least_moves = min(least_moves, candidate)
-    return least_moves
+    return min(
+        calc_shortest_dirpad_sequence_length(kp, num_dirpads)
+        for kp in get_shortest_sequences(keypad, target)
+    )
 
 
 def calc_complexity(target, num_dirpads=2):

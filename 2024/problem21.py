@@ -57,6 +57,7 @@ def get_moves(x, y):
     ]
 
 
+@cache
 def get_shortest_paths(grid, start, end, visited=None):
     visited = set(visited) if visited else set()
     if start == end:
@@ -66,11 +67,10 @@ def get_shortest_paths(grid, start, end, visited=None):
     best_paths = []
     sx, sy = find(grid, start)
     visited.add((sx, sy))
+
     for direction, mx, my in get_moves(sx, sy):
         mkey = get(grid, mx, my)
-        if mkey is None:
-            continue
-        if (mx, my) in visited:
+        if mkey is None or (mx, my) in visited:
             continue
 
         paths = get_shortest_paths(grid, mkey, end, tuple(visited))
@@ -85,6 +85,7 @@ def get_shortest_paths(grid, start, end, visited=None):
     return best_paths
 
 
+@cache
 def get_shortest_sequences(grid, target, curr=A):
     if len(target) == 0:
         return [""]

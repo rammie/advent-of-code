@@ -108,7 +108,7 @@ def get_shortest_sequences(grid, target, curr=A):
 
 
 @cache
-def calc_shortest_dirpad_sequence_length(sequence, num_dirpads=2, curr=A):
+def calc_shortest_dirpad_sequence_length(sequence, num_dirpads, curr=A):
     if not sequence:
         return 0
 
@@ -130,17 +130,17 @@ def calc_shortest_dirpad_sequence_length(sequence, num_dirpads=2, curr=A):
     )
 
 
-def calc_shortest_sequence_length(target, num_dirpads=2):
+def calc_shortest_sequence_length(target, num_dirpads):
     return min(
         calc_shortest_dirpad_sequence_length(kp, num_dirpads)
         for kp in get_shortest_sequences(keypad, target)
     )
 
 
-def calc_complexity(target, num_dirpads=2):
+def calc_complexity(target, num_dirpads):
     print("calculating complexity for", target)
     num = int(target[:-1])
-    path_len = calc_shortest_sequence_length(target, num_dirpads=num_dirpads)
+    path_len = calc_shortest_sequence_length(target, num_dirpads)
     print(f"complexity {path_len} * {num}")
     return num * path_len
 

@@ -1,3 +1,4 @@
+from collections import defaultdict
 from itertools import pairwise
 
 inputs = open("input22.txt").readlines()
@@ -24,11 +25,6 @@ def calc_next_n_simple(secret, iters=2000):
     return secret
 
 
-# Part 1
-print(sum([calc_next_n_simple(s) for s in secret_numbers]))
-
-
-# Part 2
 def calc_next_n(secret, iters=2000):
     yield secret
     for _ in range(iters):
@@ -46,45 +42,30 @@ def get_changes(sequence):
         yield s2 - s1
 
 
-def get_window_map(sequence, changes, windows):
+def get_window_map(sequence, changes, windows, best_score):
     result = {}
     for i in range(len(changes) - 3):
         key = tuple(changes[i : i + 4])
-        assert len(key) == 4
         if key not in result:
-            windows[key] = result[key] = sequence[i + 4]
-    return result
+            windows[key] += sequence[i + 4]
+            best_score = max(best_score, windows[key])`
+    return best_score
 
 
 def get_window_maps(sequences, all_changes):
-    result = []
-    windows = {}
+    windows = defaultdict(int)
+    best_score = 0
     for seq, changes in zip(sequences, all_changes):
-        result.append(get_window_map(seq, changes, windows))
-    return result, windows
+        best_score = get_window_map(seq, changes, windows, best_score)
+    return best_score
 
 
+# Part 1
+print(sum([calc_next_n_simple(s) for s in secret_numbers]))
+
+
+# Part 2
 sequences = list(list(get_sequence(s)) for s in secret_numbers)
 all_changes = list(list(get_changes(s)) for s in sequences)
-window_maps, windows = get_window_maps(sequences, all_changes)
-
-best_score = 0
-best_seq = None
-print(len(windows))
-
-count = 0
-for window, candidate_score in windows.items():
-    print(f"{len(windows) - count} remaining")
-
-    score = 0
-    for c, wm in enumerate(window_maps):
-        score += wm.get(window, 0)
-
-    if score > best_score:
-        best_score = score
-        best_seq = window
-
-    count += 1
-
+best_score = get_window_maps(sequences, all_changes)
 print(best_score)
-print(best_seq)

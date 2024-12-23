@@ -28,18 +28,23 @@ def find_cliques(machines, edges):
     return cliques
 
 
+machines_by_degree = sorted(machines, key=lambda m: degrees[m], reverse=True)
+
+
 def find_clique_with_machine(machine):
     clique = [machine]
-    for m in machines:
+    for m in machines_by_degree:
         if m == machine:
             continue
+        if degrees[m] < len(clique):
+            break
         if all((m, m2) in edges or (m2, m) in edges for m2 in clique):
             clique.append(m)
     return clique
 
 
 max_clique = None
-for m in sorted(machines, key=lambda m: degrees[m], reverse=True):
+for m in machines_by_degree:
     if max_clique and degrees[m] < len(max_clique):
         break
 

@@ -14,8 +14,6 @@ for e1, e2 in edges:
     machine_edges[e1].add(e2)
     machine_edges[e2].add(e1)
 
-machines_by_degree = sorted(machines, key=lambda m: degrees[m], reverse=True)
-
 
 def find_cliques(machines, edges):
     cliques = set()
@@ -32,7 +30,7 @@ def find_cliques(machines, edges):
 
 def find_clique_with_machine(machine):
     clique = [machine]
-    for m in machines_by_degree:
+    for m in machines:
         if m == machine:
             continue
         if all((m, m2) in edges or (m2, m) in edges for m2 in clique):
@@ -41,8 +39,7 @@ def find_clique_with_machine(machine):
 
 
 max_clique = None
-
-for m in machines_by_degree:
+for m in sorted(machines, key=lambda m: degrees[m], reverse=True):
     if max_clique and degrees[m] < len(max_clique):
         break
 

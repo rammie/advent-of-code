@@ -15,13 +15,16 @@ for e1, e2 in edges:
     machine_edges[e2].add(e1)
 
 
-def find_cliques(machines, edges):
+def find_3_cliques(machines, edges):
     cliques = set()
     t_edges = {(e1, e2) for e1, e2 in edges if e1.startswith("t") or e2.startswith("t")}
     for m in machines:
         for c in t_edges:
             if m in c:
                 continue
+
+            if degrees[m] < 3:
+                break
 
             if all((m, m2) in edges or (m2, m) in edges for m2 in c):
                 cliques.add(tuple(sorted(c + (m,))))
@@ -54,7 +57,7 @@ for m in machines_by_degree:
 
 
 # Part 1
-print(len(find_cliques(machines, edges)))
+print(len(find_3_cliques(machines, edges)))
 
 
 # Part 2

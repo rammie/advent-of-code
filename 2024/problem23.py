@@ -1,61 +1,7 @@
-edges_str = open("input23.txt").readlines()
-edges = [tuple(sorted(x.strip().split("-"))) for x in edges_str]
-
-
-def find_t_machines(edges):
-    machines = set()
-    for e1, e2 in edges:
-        if e1.startswith("t"):
-            machines.add(e1)
-        if e2.startswith("t"):
-            machines.add(e2)
-    return machines
-
-
-def find_all_connected(edges, match, choose):
-    matched_machines = set()
-    for e1, e2 in edges:
-        if match(e1, e2):
-            matched_machines.add(choose(e1, e2))
-    return matched_machines
-
-
-edges_set = set(edges)
-three_tuples = set()
-t_machines = find_t_machines(edges)
-for machine in t_machines:
-    d1_machines = find_all_connected(
-        edges,
-        lambda e1, e2: machine in (e1, e2),
-        lambda e1, e2: e1 if e2 == machine else e2,
-    )
-    for machine1 in d1_machines:
-        d2_machines = find_all_connected(
-            edges,
-            lambda e1, e2: machine1 in (e1, e2)
-            and machine not in (e1, e2)
-            and (
-                (
-                    machine1 == e1
-                    and ((e2, machine) in edges_set or (machine, e2) in edges_set)
-                )
-                or (
-                    machine1 == e2
-                    and ((e1, machine) in edges_set or (machine, e1) in edges_set)
-                )
-            ),
-            lambda e1, e2: e1 if e2 == machine1 else e2,
-        )
-        for machine2 in d2_machines:
-            assert machine != machine1 and machine1 != machine2 and machine != machine2
-            three_tuples.add(tuple(sorted([machine, machine1, machine2])))
-
-
-print(len(three_tuples))
-
-# Part 2
-
 from collections import defaultdict
+
+edges_str = open("input23.txt").readlines()
+edges = set(tuple(sorted(x.strip().split("-"))) for x in edges_str)
 
 machines = set()
 degrees = defaultdict(int)
@@ -71,12 +17,25 @@ for e1, e2 in edges:
 machines_by_degree = sorted(machines, key=lambda m: degrees[m], reverse=True)
 
 
+def find_cliques(machines, edges):
+    cliques = set()
+    t_edges = {(e1, e2) for e1, e2 in edges if e1.startswith("t") or e2.startswith("t")}
+    for m in machines:
+        for c in t_edges:
+            if m in c:
+                continue
+
+            if all((m, m2) in edges or (m2, m) in edges for m2 in c):
+                cliques.add(tuple(sorted(c + (m,))))
+    return cliques
+
+
 def find_clique_with_machine(machine):
     clique = [machine]
     for m in machines_by_degree:
         if m == machine:
             continue
-        if all((m, m2) in edges_set or (m2, m) in edges_set for m2 in clique):
+        if all((m, m2) in edges or (m2, m) in edges for m2 in clique):
             clique.append(m)
     return clique
 
@@ -84,9 +43,17 @@ def find_clique_with_machine(machine):
 max_clique = None
 
 for m in machines_by_degree:
+    if max_clique and degrees[m] < len(max_clique):
+        break
+
     clique = find_clique_with_machine(m)
     if not max_clique or len(clique) > len(max_clique):
         max_clique = clique
 
 
+# Part 1
+print(len(find_cliques(machines, edges)))
+
+
+# Part 2
 print(",".join(sorted(max_clique)))

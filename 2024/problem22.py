@@ -7,9 +7,9 @@ secret_numbers = [int(x) for x in inputs]
 
 def calc_next(s):
     c = 16777216
-    s = ((s * 64) ^ s) % c
-    s = ((s // 32) ^ s) % c
-    s = ((s * 2048) ^ s) % c
+    s = ((s << 6) ^ s) % c
+    s = ((s >> 5) ^ s) % c
+    s = ((s << 11) ^ s) % c
     return s
 
 

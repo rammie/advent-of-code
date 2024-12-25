@@ -92,7 +92,38 @@ def swap_wires(wire1, wire2):
     return {wire1, wire2}
 
 
+def binary_addition(x_val, y_val):
+    """Reverse engineered from the input."""
+    x = [int(b) for b in reversed(f"{x_val:b}")]
+    y = [int(b) for b in reversed(f"{y_val:b}")]
+    n_bits = len(x)
+    z = [0] * (n_bits + 1)
+
+    a_prev = x[0] ^ y[0]
+    b_prev = x[0] & y[0]
+    d_prev = b_prev
+    z[0] = a_prev
+    for bit in range(1, n_bits + 1):
+        if bit == n_bits:
+            z[bit] = d_prev
+            break
+
+        a_n = x[bit] ^ y[bit]
+        b_n = x[bit] & y[bit]
+        c_n = a_n & d_prev
+        d_n = c_n | b_n
+        z[bit] = a_n ^ d_prev
+
+        a_prev = a_n
+        b_prev = d_n
+        d_prev = d_n
+
+    z_val = int("".join(str(a) for a in reversed(z)), 2)
+    assert x_val + y_val == z_val
+
+
 def rewire():
+    """Work from the first input applying the logic above to make swaps."""
     result = set()
     b_prev = instructions_by_inputs[("x00", "y00", "AND")]
     d_prev = b_prev
@@ -138,4 +169,6 @@ def rewire():
     return result
 
 
+binary_addition(3, 3)
+binary_addition(5, 6)
 print(",".join(sorted(b for b in rewire())))
